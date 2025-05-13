@@ -1,20 +1,31 @@
-import Sequelize from "sequelize";
-import User from "./app/models/User";
-import dbConfig from "./database/config/config.js";
-const env = process.env.NODE_ENV || "development";
+// src/index.js
+import Sequelize from 'sequelize';
+import User from './app/models/User';
+import Task from './app/models/Task';
+import dbConfig from './database/config/config.js';
+
+const env = process.env.NODE_ENV || 'development';
 const config = dbConfig[env];
 
+const models = [User, Task];
 
-const models = [User];
-
-class Database{
+class Database {
     constructor() {
         this.init();
     }
 
-    init(){
+    init() {
         this.connection = new Sequelize(config);
-        models.map(model => model.init(this.connection));
+
+        this.models = models.reduce((acc, model) => {
+            const initializedModel = model.init(this.connection);
+            acc[initializedModel.name] = initializedModel;
+            return acc;
+        }, {});
+
+        Object.values(this.models)
+            .filter(model => typeof model.associate === 'function')
+            .forEach(model => model.associate(this.models));
     }
 }
 
